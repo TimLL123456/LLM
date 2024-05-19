@@ -1,0 +1,4 @@
+uv
+Flask
+langchain
+langchain-community
