@@ -16,7 +16,7 @@ def create_chat_record(role:str, prompt:str) -> dict:
     return {"role":role, "content":prompt}
 
 ### Function: Generate model output
-def model_inference(prompt: str, stream_mode: bool = True):
+def model_inference(chat_hist: list, stream_mode: bool = True):
     """
     Generate model output in 2 mode: stream or not stream
     """
@@ -30,7 +30,7 @@ def model_inference(prompt: str, stream_mode: bool = True):
 
     ### Model inference
     response = ollama.chat(model=model,
-                            messages=[create_chat_record("user", prompt)],
+                            messages=chat_hist,
                             stream=stream_mode,
                             keep_alive=-1)
     
@@ -57,10 +57,10 @@ def display_chat_history():
 
 ### Initialize session state
 if "message" not in st.session_state.keys():
-    first_chat = create_chat_record("assistent", "What can i help you?")
-    st.session_state.message = [first_chat]
+    st.session_state.message = []
 
-
+if "token" not in st.session_state.keys():
+    st.session_state.token = 0
 
 ### Display chat history
 display_chat_history()
@@ -91,13 +91,19 @@ if prompt:
     ### Display model output
     with st.chat_message(model, avatar="🦙"):
         if stream_mode:
-            stream_response = st.write_stream(model_inference(prompt, stream_mode))
+            stream_response = st.write_stream(model_inference(st.session_state.message, stream_mode))
             ### Append chat record into session state
             st.session_state.message.append(create_chat_record("assistant", stream_response))
         else:
-            response = model_inference(prompt, stream_mode)
+            response = model_inference(st.session_state.message, stream_mode)
             st.write(response)
             ### Append chat record into session state
             st.session_state.message.append(create_chat_record("assistant", response))
 
-print("@*#&(*@#&(*@#&(*@)))")
+### Count tokens
+token_list = [len(i['content'].split()) for i in st.session_state.message]
+for num_token in token_list:
+    st.session_state.token += num_token
+
+### Display current tokens in sidebar
+st.sidebar.write(f"Number of tokens: {st.session_state.token}")
