@@ -7,7 +7,19 @@ import time
 ### https://decoder.sh/videos/llm-chat-app-in-python-w_-ollama_py-and-streamlit
 ### All will be rerun
 
-model = "llama3"
+model_name = "llama3"
+
+### Set page tab config
+st.set_page_config(
+    page_title="LLM",
+    page_icon="👋",
+)
+
+### Display the model using
+st.title(model_name)
+
+### Create a header of this page in sidebar
+st.sidebar.header("LLM")
 
 def create_chat_record(role:str, prompt:str) -> dict:
     """
@@ -29,10 +41,10 @@ def model_inference(chat_hist: list, stream_mode: bool = True):
             yield resp['message']['content']
 
     ### Model inference
-    response = ollama.chat(model=model,
+    response = ollama.chat(model=model_name,
                             messages=chat_hist,
                             stream=stream_mode,
-                            keep_alive=-1)
+                            keep_alive=-1,)
     
     ### Output stream or not stream response
     if stream_mode:
@@ -70,7 +82,7 @@ with st.sidebar:
     ### Stream mode
     stream_mode = st.toggle("Stream mode", value=True)
     if stream_mode:
-        st.write("stream mode - ON")
+        st.markdown("stream mode - ON")
     else:
         st.write("stream mode - OFF")
 
@@ -89,7 +101,7 @@ if prompt:
         time.sleep(0.1)
 
     ### Display model output
-    with st.chat_message(model, avatar="🦙"):
+    with st.chat_message(model_name, avatar="🦙"):
         if stream_mode:
             stream_response = st.write_stream(model_inference(st.session_state.message, stream_mode))
             ### Append chat record into session state
