@@ -81,7 +81,7 @@ if date:
                     book_or_cancel(conn, df, "available")
         
         ### Highlight the period for selected time period
-        st.dataframe(df.style.applymap(lambda x: "background-color: yellow" if x == selected_period else None), width=600, height=600, hide_index=True)
+        st.dataframe(df.style.map(lambda x: "background-color: yellow" if x == selected_period else None), width=600, height=600, hide_index=True)
     
     else:
         
