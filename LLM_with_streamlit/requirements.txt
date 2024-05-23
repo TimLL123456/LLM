@@ -1,3 +1,9 @@
 streamlit
 ollama
 st-gsheets-connection
+langchain
+pydantic
+instructor
+openai
+yfinance
+langchain_community
