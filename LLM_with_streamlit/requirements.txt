@@ -5,5 +5,5 @@ langchain
 pydantic
 instructor
 openai
-yfinance
 langchain_community
+langchain_core
