@@ -10,7 +10,7 @@ def connect_to_gspreadsheet(date):
     ### Connect to the google spreadsheet
     url = st.secrets['connections']['gsheets']['spreadsheet']
     conn = st.connection("gsheets", type=GSheetsConnection)
-    df = conn.read(spreadsheet=url, worksheet="Booking", usecols=list(range(3)))
+    df = conn.read(spreadsheet=url, worksheet="Booking", usecols=list(range(5)))
 
     return conn, df
 
@@ -74,8 +74,8 @@ if date:
             ### Get the vacancy status for the specificed period
             vacancy_status = df[df["Period"] == selected_period]["Vacancy"].values[0]
 
-            if vacancy_status == "available":
-                st.success("This period is available")
+            if vacancy_status == "Available":
+                st.success("This period is Available")
 
                 if st.button("Book"):
                     ### Change that period vacancy status
@@ -86,7 +86,7 @@ if date:
 
                 if st.button("Cancel"):
                     ### Change that period vacancy status
-                    book_or_cancel(conn, full_df, df, date, selected_period, "available")
+                    book_or_cancel(conn, full_df, df, date, selected_period, "Available")
         
         ### Highlight the period for selected time period
         st.dataframe(df.style.applymap(lambda x: "background-color: yellow" if x == selected_period else None), width=600, height=600, hide_index=True)

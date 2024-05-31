@@ -10,7 +10,7 @@ def connect_to_gspreadsheet(date):
     ### Connect to the google spreadsheet
     url = st.secrets['connections']['gsheets']['spreadsheet']
     conn = st.connection("gsheets", type=GSheetsConnection)
-    df = conn.read(spreadsheet=url, worksheet="Booking", usecols=list(range(3)))
+    df = conn.read(spreadsheet=url, worksheet="Booking", usecols=list(range(5)))
 
     return conn, df
 
