@@ -142,6 +142,7 @@ if "token" not in st.session_state.keys():
 
 ### Display chat history
 display_chat_history()
+st.code(st.session_state.message)
 
 ### Setup sidebar
 with st.sidebar:
@@ -157,10 +158,6 @@ Instruction:
 - If user do not provide a clear date and period, ask the user to give a clear and exact date and period. (e.g., 2024/3/1, 11:00 - 12:00)
 - User are only to book 1 hour. If user ask for booking more than 1 hour, tell the user only can book 1 hour.
 
-Here is the recommendation period that system found. Please recommend the the user to select these period:
-09:00 - 10:00
-12:00 - 13:00
-
 Query:
 """
 
@@ -172,6 +169,7 @@ if prompt:
     ### Display user input
     with st.chat_message("user", avatar="😜"):
         st.markdown(prompt)
+
     ### Append chat record into session state
     st.session_state.message.append(create_chat_record("user", prompt))
     st.session_state.instruction_prompt.append(create_chat_record("user", instruction+prompt))
@@ -180,7 +178,10 @@ if prompt:
 
     if structure_response.date == "None" or structure_response.period == "None":
         with st.chat_message(model_name, avatar="🦙"):
-            st.write_stream(model_inference(st.session_state.instruction_prompt, stream_mode))
+            llm_output = st.write_stream(model_inference(st.session_state.instruction_prompt, stream_mode))
+            
+        st.session_state.message.append(create_chat_record("assistant", llm_output))
+        
     elif structure_response.date == "check" or structure_response.period == "check":
         st.write("check available booking")
     else:

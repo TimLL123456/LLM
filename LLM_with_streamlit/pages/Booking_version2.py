@@ -102,6 +102,7 @@ def main():
     date = st.date_input("Select a date", value=None)
 
     if date:
+        
         ### Connect to google spreadsheet & Extract data
         conn, full_df = connect_to_gspreadsheet(date)
         date = str(date)
