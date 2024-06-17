@@ -2,17 +2,16 @@
 ### https://blog.streamlit.io/how-to-build-a-llama-2-chatbot/
 ### https://decoder.sh/videos/llm-chat-app-in-python-w_-ollama_py-and-streamlit
 #####################################################################################
+import sys
+sys.path.append('/media/admin1/ea78b76e-5f68-4af3-a29b-36a4428c73a0/myfile/LLM/00_my_llm/LLM/LLM/LLM_with_streamlit/tool')
+from tools import mytools
+
 import streamlit as st
 import ollama
 from openai import OpenAI
 from pydantic import BaseModel, Field
 import instructor
 import re
-import pandas as pd
-
-import sys
-sys.path.append('/media/admin1/ea78b76e-5f68-4af3-a29b-36a4428c73a0/myfile/LLM/00_my_llm/LLM/LLM/LLM_with_streamlit/tool')
-from tools import mytools
 
 def check_valid_date(date_str: str):
     """
@@ -47,6 +46,7 @@ def set_config():
     
     ### Create a header of this page in sidebar
     st.sidebar.header("LLM")
+    st.sidebar.markdown("Database data: 21/6/2024 - 28/6/2024")
     
     ### Setup sidebar
     with st.sidebar:
@@ -182,7 +182,6 @@ def model_inference(chat_hist: list, stream_mode: bool = True):
 
 def main():
     
-    
     set_config()
     
     ### Initialize session state
@@ -217,20 +216,36 @@ def main():
         ### Standardize and Structure LLM output
         structure_response = structured_llm_output(prompt)
         
+        ### LLM regenerate
         if structure_response.date == "None" or structure_response.period == "None":
             with st.chat_message(model_name, avatar="🦙"):
                 llm_output = st.write_stream(model_inference(st.session_state.instruction_prompt, stream_mode))
 
             st.session_state.message.append(create_chat_record("assistant", llm_output))
-
+        
+        ### LLM check booking
         elif structure_response.date == "check" or structure_response.period == "check":
             st.write("check available booking")
-
+        
+        ### LLM booking
         elif check_valid_date(structure_response.date) and check_valid_time(structure_response.period):
-            _, df = mytools.connect_to_gspreadsheet(structure_response.date)
-            df
-            st.write(structure_response.date, structure_response.period)
-            st.write("Booking the timeslot for you")
+            
+            ### Extract data from spreadsheet
+            conn, full_df = mytools.connect_to_gspreadsheet(structure_response.date)
+            filter_df = full_df[full_df["Date"] == structure_response.date]
+
+            if not filter_df.empty:
+                start_time, end_time = structure_response.period.split("-")
+                
+                user_selected_df = filter_df[(filter_df["Start"] >= start_time) & (filter_df["End"] <= end_time)]
+                
+                if mytools.is_vaild_booking(user_selected_df):
+                    
+                
+                st.write(structure_response.date, structure_response.period)
+                st.write("Booking the timeslot for you")
+            else:
+                pass
 
 ############################################################
 ############################################################
