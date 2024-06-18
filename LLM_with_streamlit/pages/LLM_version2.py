@@ -4,7 +4,7 @@
 #####################################################################################
 import sys
 sys.path.append('/media/admin1/ea78b76e-5f68-4af3-a29b-36a4428c73a0/myfile/LLM/00_my_llm/LLM/LLM/LLM_with_streamlit/tool')
-from tools import mytools
+from tool.tools import mytools
 
 import streamlit as st
 import ollama
@@ -240,7 +240,11 @@ def main():
                 user_selected_df = filter_df[(filter_df["Start"] >= start_time) & (filter_df["End"] <= end_time)]
                 
                 if mytools.is_vaild_booking(user_selected_df):
-                    
+                    mytools.book_or_cancel(conn, full_df, structure_response.date, start_time, end_time, "Booked")
+                    conn, full_df = mytools.connect_to_gspreadsheet(structure_response.date)
+                    filter_df = full_df[full_df["Date"] == structure_response.date]
+                    filter_df
+
                 
                 st.write(structure_response.date, structure_response.period)
                 st.write("Booking the timeslot for you")
