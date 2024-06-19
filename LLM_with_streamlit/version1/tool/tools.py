@@ -49,11 +49,31 @@ class mytools:
         # st.rerun()
         
     def recommendation(df, start, end):
+
+        def find_consecutive(lst:list) -> list:
+            """
+            Return a list of consecutive range
+            input: [2, 5, 6, 7]
+            output: [(2, 2), (5, 7)]
+            """
+            
+            ### Sorted the list
+            sorted_lst = sorted(lst)
+            
+            ### Find the gaps of non consecutive
+            gaps = [[start, end] for start, end in zip(sorted_lst, sorted_lst[1:]) if start + 1 < end]
+            
+            edges = iter(sorted_lst[:1] + sum(gaps, []) + sorted_lst[-1:])
+            
+            return list(zip(edges, edges))
+
         result = {"recommend":[]}
         display_str = "Here is the system recommendation time period (Part of your selected time have been booked):  \n"
 
         ### User selected time period dataframe
         tmp_df = df[(df["Start"] >= start) & (df["End"] <= end)]
+
+        tmp_df
 
         ### All index of available time period from the dataframe
         _indexes = tmp_df.index[tmp_df["Vacancy"] == "Available"]

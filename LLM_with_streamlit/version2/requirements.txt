@@ -1,0 +1,9 @@
+streamlit
+ollama
+st-gsheets-connection
+langchain
+pydantic
+instructor
+openai
+langchain_community
+langchain_core

@@ -73,16 +73,16 @@ def book_or_cancel(conn, df:pd.DataFrame, date, start, end, action:str):
 def recommendation(df, start, end):
     result = {"recommend":[]}
     display_str = "Here is the system recommendation time period (Part of your selected time have been booked):  \n"
-    
+
     ### User selected time period dataframe
     tmp_df = df[(df["Start"] >= start) & (df["End"] <= end)]
-    
+
     ### All index of available time period from the dataframe
     _indexes = tmp_df.index[tmp_df["Vacancy"] == "Available"]
     
     ### Available time period index list
     index_list = _indexes.tolist()
-    
+
     grouped_period = find_consecutive(index_list)
     
     for period_start_index, period_end_index in grouped_period:
@@ -136,7 +136,7 @@ def main():
                         book_or_cancel(conn, full_df, date, start_time, end_time, "Available")
                         
 
-                user_selected_df
+                #user_selected_df
         else:
             ### Return "Not Data Yet" for empty DataFrame
             st.markdown("<h4 style='text-align: center; '>Not Data Yet</h4>", unsafe_allow_html=True)
