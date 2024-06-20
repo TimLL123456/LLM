@@ -7,3 +7,4 @@ instructor
 openai
 langchain_community
 langchain_core
+streamlit_authenticator
