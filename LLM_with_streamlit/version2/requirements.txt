@@ -1,10 +1,9 @@
+st-supabase-connection==2.0.0
 streamlit
 ollama
-st-gsheets-connection
 langchain
 pydantic
 instructor
 openai
 langchain_community
 langchain_core
-streamlit_authenticator
