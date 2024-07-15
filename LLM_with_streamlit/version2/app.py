@@ -5,19 +5,18 @@ import json
 
 ### reference: [supabase in streamlit] - https://github.com/SiddhantSadangi/st_supabase_connection
 
+### Pages
+### =====
 login_section = st.container(border=True)
 signup_section = st.container(border=True)
 
 
-def change_login_status(status:bool) -> None:
+### Connect to database
+### ===================
+conn = st.connection("supabase", type=SupabaseConnection)
 
-    """
-    Change the login_status to redirect the page
-    """
 
-    st.session_state.login_state = status
-
-def check_username_email(string_input:str) -> bool:
+def is_username(string_input:str) -> bool:
     """
     Check whether the user input is username or email
 
@@ -28,6 +27,7 @@ def check_username_email(string_input:str) -> bool:
         return False
     else:
         return True
+
 
 def check_valid_login(response:json,
                       email:str = None,
@@ -46,18 +46,34 @@ def check_valid_login(response:json,
         if (email_db == email) and (password_db == password):
             return True
 
-    elif (username != None) and (password != None):
+    if (username != None) and (password != None):
         username_db = response.data[0]['username']
         password_db = response.data[0]['password']
-
-        st.write(username_db, password_db)
 
         if (username_db == username) and (password_db == password):
             return True
         
     return False
 
-def show_login_page():
+
+def is_valid_signup(username:str, email:str, password_1:str, password_2:str) -> bool:
+    """
+    check if valid to sign up account
+
+    Return True
+        username, email, password_1, password_2 != ""
+        "@" in email
+        password_1 == password_2
+    """
+    if ('' not in (username, email, password_1, password_2)) and \
+        (not is_username(email)) and (password_1 == password_2):
+
+        return True
+    
+    return False
+
+
+def show_login_page() -> None:
     """
     Display the login page
     """
@@ -70,11 +86,8 @@ def show_login_page():
 
         if st.button("Login"):
 
-            ### Connect to database
-            conn = st.connection("supabase", type=SupabaseConnection)
-
             ### When user input is "username"
-            if check_username_email(username_n_email):
+            if is_username(username_n_email):
 
                 response = execute_query(conn.table("login_information").select("*").eq("username", username_n_email))
 
@@ -89,10 +102,11 @@ def show_login_page():
                     st.balloons()
 
         if st.button("Sign up"):
-            change_login_status(False)
-            st.experimental_rerun()
+            st.session_state.login_state = False
+            st.rerun()
 
-def show_signup_page():
+
+def show_signup_page() -> None:
     """
     Display the sign up page
     """
@@ -105,11 +119,16 @@ def show_signup_page():
         password = st.text_input(label='Password', value='', placeholder="Enter your password")
         retype_password = st.text_input(label='Confirm password', value='', placeholder="Confirm your password")
 
-        st.button("Create")
+        ### When (user_name not null), (email valid), (password == retype_password)
+        if st.button("Create") and is_valid_signup(user_name, email, password, retype_password):
+            execute_query(conn.table("login_information").insert([{"username":user_name, "email":email, "password":password}], count="None"), ttl=0)
+            
+            st.session_state.login_state = True
+            st.rerun()
 
         if st.button("Back"):
-            change_login_status(True)
-            st.experimental_rerun()
+            st.session_state.login_state = True
+            st.rerun()
 
 def main():
     
