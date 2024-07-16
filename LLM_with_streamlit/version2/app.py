@@ -5,10 +5,17 @@ import json
 
 ### reference: [supabase in streamlit] - https://github.com/SiddhantSadangi/st_supabase_connection
 
+
+### Things to do:
+### 1. Change validation function options > 2 (X True/False)
+### 2. Change login status function options > 2 (X True/False)
+
+
 ### Pages
 ### =====
 login_section = st.container(border=True)
 signup_section = st.container(border=True)
+user_interface_section = st.container()
 
 
 ### Connect to database
@@ -65,6 +72,7 @@ def is_valid_signup(username:str, email:str, password_1:str, password_2:str) -> 
         "@" in email
         password_1 == password_2
     """
+
     if ('' not in (username, email, password_1, password_2)) and \
         (not is_username(email)) and (password_1 == password_2):
 
@@ -84,7 +92,7 @@ def show_login_page() -> None:
         username_n_email = st.text_input(label='Username/Email', value='', placeholder="Enter your username/email")
         password = st.text_input(label='Password', value='', placeholder="Enter your user name", type='password')
 
-        if st.button("Login"):
+        if st.button("Login") and username_n_email != "" and password != "":
 
             ### When user input is "username"
             if is_username(username_n_email):
@@ -93,6 +101,8 @@ def show_login_page() -> None:
 
                 if check_valid_login(response, username=username_n_email, password=password):
                     st.balloons()
+                    st.session_state.user_interface = True
+                    st.session_state.login_state = False
 
             ### When user input is "email"
             else:
@@ -100,6 +110,8 @@ def show_login_page() -> None:
                 
                 if check_valid_login(response, email=username_n_email, password=password):
                     st.balloons()
+                    st.session_state.user_interface = True
+                    st.session_state.login_state = False
 
         if st.button("Sign up"):
             st.session_state.login_state = False
@@ -116,8 +128,8 @@ def show_signup_page() -> None:
 
         user_name = st.text_input(label='Username', value='', placeholder="Enter your username")
         email = st.text_input(label='Email', value='', placeholder="Enter your email")
-        password = st.text_input(label='Password', value='', placeholder="Enter your password")
-        retype_password = st.text_input(label='Confirm password', value='', placeholder="Confirm your password")
+        password = st.text_input(label='Password', value='', placeholder="Enter your password", type="password")
+        retype_password = st.text_input(label='Confirm password', value='', placeholder="Confirm your password", type="password")
 
         ### When (user_name not null), (email valid), (password == retype_password)
         if st.button("Create") and is_valid_signup(user_name, email, password, retype_password):
@@ -127,22 +139,35 @@ def show_signup_page() -> None:
             st.rerun()
 
         if st.button("Back"):
+
             st.session_state.login_state = True
             st.rerun()
+
+
+def user_interface_page() -> None:
+    with user_interface_section:
+        st.text_input(label='testing', value='', placeholder="testing")
+
 
 def main():
     
     if "login_state" not in st.session_state:
         st.session_state.login_state = True
 
-    if st.session_state.login_state:
 
+    if "user_interface" not in st.session_state:
+        st.session_state.user_interface = False
+
+
+    if st.session_state.login_state:
         ### Display the login page
         show_login_page()
     else:
-
         ### Display the sign up page
         show_signup_page()
 
+
+    if st.session_state.user_interface:
+        user_interface_page()
 
 main()
