@@ -1,5 +1,6 @@
 import json
 
+
 def is_username(string_input:str) -> bool:
     """
     Check whether the user input is username or email
@@ -11,7 +12,8 @@ def is_username(string_input:str) -> bool:
         return False
     else:
         return True
-    
+
+
 def is_valid_login(response:json,
                       email:str = None,
                       username:str = None,
@@ -36,4 +38,22 @@ def is_valid_login(response:json,
         if (username_db == username) and (password_db == password):
             return True
         
+    return False
+
+
+def is_valid_signup(username:str, email:str, password_1:str, password_2:str) -> bool:
+    """
+    check if valid to sign up account
+
+    Return True
+        username, email, password_1, password_2 != ""
+        "@" in email
+        password_1 == password_2
+    """
+
+    if ('' not in (username, email, password_1, password_2)) and \
+        (not is_username(email)) and (password_1 == password_2):
+
+        return True
+    
     return False
