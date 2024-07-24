@@ -57,3 +57,9 @@ def is_valid_signup(username:str, email:str, password_1:str, password_2:str) -> 
         return True
     
     return False
+
+def gen_period(start, end):
+    """
+    Generate working hours list
+    """
+    return [f"{i:02}:00 - {i+1:02}:00" for i in range(start, end)]
