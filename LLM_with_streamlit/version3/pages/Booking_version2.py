@@ -109,7 +109,7 @@ def main():
 
         ### Extract Start & End Time
         filter_df = full_df[full_df["Date"] == date]
-
+        st.code(filter_df.dtypes)
         ### Check if the date is available
         if not filter_df.empty:
             ### Input start & end time
