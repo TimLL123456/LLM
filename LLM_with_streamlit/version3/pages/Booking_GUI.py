@@ -13,6 +13,8 @@ class system_info:
     today = date.today()
     max_day = datetime(today.year, today.month+1, today.day)
     period = (7, 23)
+    conn = st.session_state.connection
+    curr_user_id = st.session_state.user_info["user_id"]
 
 
 def main():
@@ -27,33 +29,22 @@ def main():
                          max_value=system_info.max_day)
 
 
-    ### Check available period in that day
     if date:
-        response = execute_query(st.session_state.connection.table("booking_history").select("*").eq("date", date),ttl=0)
+        ### Check date available in database
+        response = execute_query(system_info.conn.table("booking_history").select("*").eq("date", date),ttl=0)
         
+
+        ### While response not empty
         if response.data:
+            pass
 
-            data = show_db_data(response.data)
-            template_df = data.construct_template(system_info.period)
-            booking_record = data.merge_data(date, template_df)
-
-
-            start_options = booking_record[booking_record["user_id"] == 0]["start"].values.tolist()
-            start_time = st.selectbox("Select start time", start_options, index=None)
-
-
-            end_time_list = booking_record[booking_record["end"] > start_time]["end"].values.tolist()
-            end_time = st.selectbox("Select end time", end_time_list, index=None)
-
-
-            if start_time and end_time:
-
-                user_selected_df = booking_record[(booking_record["start"] >= start_time) & (booking_record["end"] <= end_time)]
-                user_selected_df
-            
+            ### Construct dataframe template & merge database response to template
+            # data = show_db_data(response.data)
+            # template_df = data.construct_template(system_info.period)
+            # booking_record = data.merge_data(date, template_df)
+        
         else:
-            st.code("Empty list")
-
+            
 
 menu()
 main()

@@ -1,5 +1,7 @@
 import json
 import pandas as pd
+import streamlit as st
+from st_supabase_connection import execute_query
 
 
 def is_username(string_input:str) -> bool:
@@ -59,6 +61,122 @@ def is_valid_signup(username:str, email:str, password_1:str, password_2:str) -> 
     
     return False
 
+
+def is_vaild_booking(df:pd.DataFrame):
+    """
+    Check if all Vacancy status is available
+    """
+    return all(i == "available" for i in df["vacancy"].values.tolist())
+
+
+def recommendation(df, start, end):
+
+    def find_consecutive(lst:list) -> list:
+        """
+        Return a list of consecutive range
+        input: [2, 5, 6, 7]
+        output: [(2, 2), (5, 7)]
+        """
+        
+        ### Sorted the list
+        sorted_lst = sorted(lst)
+        
+        ### Find the gaps of non consecutive
+        gaps = [[start, end] for start, end in zip(sorted_lst, sorted_lst[1:]) if start + 1 < end]
+        
+        edges = iter(sorted_lst[:1] + sum(gaps, []) + sorted_lst[-1:])
+        
+        return list(zip(edges, edges))
+
+    result = {"recommend":[]}
+    display_str = "Here is the system recommendation time period (Part of your selected time have been booked):  \n"
+
+    ### User selected time period dataframe
+    tmp_df = df[(df["start"] >= start) & (df["end"] <= end)]
+
+    ### All index of available time period from the dataframe
+    _indexes = tmp_df.index[tmp_df["user_id"] == 0]
+    
+    ### Available time period index list
+    index_list = _indexes.tolist()
+
+    grouped_period = find_consecutive(index_list)
+    
+    for period_start_index, period_end_index in grouped_period:
+        result["recommend"].append(f"""{tmp_df.loc[period_start_index, "start"]} - {tmp_df.loc[period_end_index, "end"]}\n""")
+        display_str += f"""* {tmp_df.loc[period_start_index, "start"]} - {tmp_df.loc[period_end_index, "end"]}  \n"""
+    
+    st.warning(display_str)
+
+
+def booking(conn, df:pd.DataFrame, user_id: int):
+    """
+    Update the status of Vacancy
+    """
+    df["user_id"] = user_id
+    df["vacancy"] = "booked"
+    df["date"] = df["date"].astype(str)
+    cols = [col for col in df.columns if col not in ("start", "end")]
+
+    records = df[cols].to_dict("records")
+
+    execute_query(conn.table("booking_history").insert(records, count="None"), ttl=0)
+
+    st.balloons()
+    st.toast("Booking successful")
+
+    return df
+
+
+def book_or_cancel_v1(conn, df:pd.DataFrame, date, start, end, action:str):
+    """
+    Update the status of Vacancy
+    """
+    ### Find the indexes of all vaild period
+    _indexes = df.index[(df["date"] == date) & (df["start"] >= start) & (df["end"] <= end)]
+    
+    ### Update the vacancy status
+    df.loc[_indexes, "Vacancy"] = action
+
+    ### Update DataFrame
+    conn.update(worksheet="Booking", data=df)
+
+
+def display_user_info(user_info):
+    """
+    Function to display user info in the sidebar with custom styling
+    """
+    st.sidebar.markdown("""
+        <style>
+            .user-info {
+                font-family: Arial, sans-serif;
+                background-color: #f0f0f0;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                margin-bottom: 20px;
+            }
+            .user-info h3 {
+                color: #333;
+                margin-bottom: 10px;
+            }
+            .user-info p {
+                color: #666;
+                margin: 5px 0;
+                font-size: 14px;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    st.sidebar.markdown(f"""
+        <div class="user-info">
+            <p><strong>User ID:</strong> {user_info['user_id']}</p>
+            <p><strong>Username:</strong> {user_info['username']}</p>
+            <p><strong>Email:</strong> {user_info['email']}</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+
 class show_db_data:
     """
     Convert the database response to the template dataframe
@@ -101,7 +219,5 @@ class show_db_data:
         clean_merge_df["user_id"] = clean_merge_df["user_id"].astype(int)
         # clean_merge_df["start"] = pd.to_datetime(clean_merge_df["start"], format="%H:%M").dt.strftime("%H:%M") ### 08:00. 09:00
         # clean_merge_df["end"] = pd.to_datetime(clean_merge_df["end"], format="%H:%M").dt.strftime("%H:%M")
-
-        print(clean_merge_df.dtypes)
 
         return clean_merge_df

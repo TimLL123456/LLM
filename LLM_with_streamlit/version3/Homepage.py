@@ -18,6 +18,9 @@ def connect_database():
 if "login_state" not in st.session_state:
     st.session_state.login_state = "login"
 
+if "user_info" not in st.session_state:
+    st.session_state.user_info = None
+
 
 ### Connect to database
 conn = connect_database()
