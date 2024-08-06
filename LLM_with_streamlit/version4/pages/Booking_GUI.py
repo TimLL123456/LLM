@@ -43,7 +43,13 @@ def GUI():
                                               .gt("booking_endtime", start_time).execute()
 
 
-        response.data
+        if response.data == []:
+            ### Booking function
+            pass
+        else:
+            ### Recommendation
+            pass
+
 
 if __name__ == "__main__":
     menu()
