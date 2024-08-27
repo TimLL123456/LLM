@@ -1,7 +1,7 @@
 import streamlit as st
 from Menu import menu
 from datetime import date, datetime
-
+from tools import book, recommend
 
 class system_info:
     today = date.today()
@@ -42,13 +42,19 @@ def GUI():
                                               .lt("booking_starttime", end_time)\
                                               .gt("booking_endtime", start_time).execute()
 
+        user_id = st.session_state.user_info["user_id"]
+
+
 
         if response.data == []:
             ### Booking function
-            pass
+            if st.button("Book"):
+                book(user_id, select_date, start_time, end_time)
         else:
             ### Recommendation
-            pass
+            message, gap_list = recommend(*system_info.period, response.data)
+
+            st.warning(message)
 
 
 if __name__ == "__main__":

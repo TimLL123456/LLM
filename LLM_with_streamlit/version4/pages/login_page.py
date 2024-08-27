@@ -29,6 +29,7 @@ def show_login_page(conn):
 
 
                 response = conn.table("users").select("*").eq("username", username_n_email).execute()
+
                 ### Append to session state
                 st.session_state.user_info = response.data[0]
 

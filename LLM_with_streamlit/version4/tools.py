@@ -41,7 +41,9 @@ def is_username(string_input:str) -> bool:
     """
     Check whether the user input is username or email
 
-    username --> True, email --> False
+    Return:
+        True: equal to username
+        False: equal to email
     """
 
     if "@" in string_input:
@@ -57,7 +59,9 @@ def is_valid_login(response:json,
     """
     Check username/email and password if a valid login
 
-    Valid --> True, Invalid --> False
+    Return:
+        True: valid
+        False: invalid
     """
 
     if (email != None) and (password != None):
@@ -81,10 +85,8 @@ def is_valid_signup(username:str, email:str, password_1:str, password_2:str) -> 
     """
     check if valid to sign up account
 
-    Return True
-        username, email, password_1, password_2 != ""
-        "@" in email
-        password_1 == password_2
+    Return:
+        True: if (username, email, password_1, password_2) != "" & "@" in email & password_1 == password_2
     """
 
     if ('' not in (username, email, password_1, password_2)) and \
@@ -93,3 +95,49 @@ def is_valid_signup(username:str, email:str, password_1:str, password_2:str) -> 
         return True
     
     return False
+
+
+def book(user_id, booking_date, booking_start, booking_end):
+    input_dict = {"booking_id": 30,
+                  "user_id": user_id,
+                  "room_id": 1,
+                  "booking_date": str(booking_date),
+                  "booking_starttime": booking_start,
+                  "booking_endtime": booking_end,
+                  "totalcost": 0.0,
+                  "status_id": 1
+                  }
+
+    
+    st.session_state.connection.table("bookings").insert(input_dict).execute()
+
+
+def recommend(start:int, end:int, json_data:list) -> tuple:
+    """
+    Recommend the available booking period
+
+    Input:
+        start(int): the start time of booking
+        end(int): the end time of booking
+        booked_period(list): a list of booked period
+
+    Return:
+        message(str): recommendation period message
+        gap(list): a list of all available period in that day
+    """
+
+    display_str = "Here is the system recommendation time period (Part of your selected time have been booked):  \n"
+
+    booked_period = [(int(record["booking_starttime"].split(":")[0]), int(record["booking_endtime"].split(":")[0])) for record in json_data]
+
+    ### Find gap between each booked period
+    gap = [(first[-1], second[0]) for first, second in zip(booked_period, booked_period[1:]) if first[-1] != second[0]]
+
+    ### Insert the start/end period
+    gap.insert(0, (start, booked_period[0][0])) if start < booked_period[0][0] else None
+    gap.append((booked_period[-1][-1], end)) if end > booked_period[-1][-1] else None
+    
+    for period in gap:
+        display_str += f"* {period[0]} - {period[1]}  \n"
+
+    return display_str, gap

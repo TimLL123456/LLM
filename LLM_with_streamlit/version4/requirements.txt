@@ -7,4 +7,3 @@ instructor
 openai
 langchain_community
 langchain_core
-supabase
