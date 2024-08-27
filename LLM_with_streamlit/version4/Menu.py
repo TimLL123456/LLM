@@ -12,7 +12,7 @@ def unauthenticated():
 def authenticated():
     display_user_info(st.session_state.user_info)
     st.sidebar.page_link("pages/Booking_GUI.py",label="Booking")
-    # st.sidebar.page_link("pages/LLM_version2.py",label="Booking with AI")
+    st.sidebar.page_link("pages/Booking_LLM.py",label="Booking with AI")
     st.sidebar.page_link("pages/logout_page.py",label="Logout")
 
 

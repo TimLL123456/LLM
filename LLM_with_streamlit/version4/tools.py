@@ -116,6 +116,8 @@ def recommend(start:int, end:int, json_data:list) -> tuple:
     """
     Recommend the available booking period
 
+    ### Adjustment: json_data should be all booked period on that day
+
     Input:
         start(int): the start time of booking
         end(int): the end time of booking
