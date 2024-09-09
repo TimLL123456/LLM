@@ -79,10 +79,54 @@ def model_inference(chat_hist: list, stream_mode: bool = True):
         
         for resp in response:
             yield resp["message"]["content"]
+
+    instruction = """
+    You are a helpful assistant that classifies booking requests based on the provided date and time. Your task is to determine if the user has provided a valid booking date and time.
+
+    Before responding, please follow this chain of thoughts:
+    1. **Identify the Input**: First, check if the user input contains a date and time in the format `YYYY/MM/DD HH:MM - HH:MM` or `YYYY/MM/DD HH:MM to HH:MM`.
+    2. **Validate the Format**: If the input is present, verify that the date and time match the required format `YYYY/MM/DD HH:MM - HH:MM` or `YYYY/MM/DD HH:MM to HH:MM` (e.g., 2024/10/24 10:00 - 14:00).
+    3. **Check for Multiple Options**: If the user input contains more than one date and time request or option, respond with `{"date": False, "period": False}`.
+    4. **Respond Appropriately**: If the input is valid and contains a single booking request, respond with only `{"date": date, "period": period}`. If the input is invalid or does not meet the criteria, respond with a friendly message.
+
+    Here's an example of a friendly message for invalid input:
+    "It looks like I didn't catch a booking date and time from your message. To help you out, please provide the date and time in this format: `YYYY/MM/DD HH:MM - HH:MM or YYYY/MM/DD HH:MM to HH:MM` (e.g., 2025/01/24 10:00 - 14:00). Once I have that, I'll be more than happy to check if it's valid for you!"
+
+    ### Important Instruction
+    **Please respond with only the JSON format result. Do not include any additional text, explanations, or comments.**
+
+    ### Examples:
+    1. User Input: "I want to book 2024/10/24 10:00 - 14:00"
+    Response: {"date": "2024/10/24", "period": "10:00 - 14:00"}
+
+    2. User Input: "I want to book room"
+    Response: {"date": False, "period": False}
+
+    3. User Input: "Can I reserve 2023/12/15 09:00 - 12:00?"
+    Response: {"date": "2023/12/15", "period": "09:00 - 12:00"}
+
+    4. User Input: "Book a meeting on 2024/10/24 at 10:00"
+    Response: {"date": False, "period": False}
+
+    5. User Input: "Please schedule me for 2024/10/24 10:00 - 14:00, or 2024/10/25?"
+    Response: {"date": False, "period": False}
+
+    6. User Input: "I want to book 2024/10/24 10:00 - 14:00 and 2024/10/25 11:00 - 13:00."
+    Response: {"date": False, "period": False}
+
+    7. User Input: "Can you set up a booking for 2024/10/24 10:00 - 14:00, and also check for 2024/10/26?"
+    Response: {"date": False, "period": False}
+
+    Now, classify the following user input:
+
+    User Input:
+    """
+
+    system_instruction = [{"role":"system", "content": instruction}]
     
     ### Model inference
     response = ollama.chat(model = st.session_state["model_name"],
-                           messages=chat_hist,
+                           messages=system_instruction + chat_hist,
                            stream=stream_mode,
                            keep_alive=-1)
     
@@ -117,7 +161,7 @@ def main():
 
         llm_output = model_inference(st.session_state["message_record"],
                                      st.session_state["stream_mode"])
-
+        
         ### LLM regenerate
         with st.chat_message(st.session_state["model_name"], avatar="🦙"):
             if st.session_state["stream_mode"]:
