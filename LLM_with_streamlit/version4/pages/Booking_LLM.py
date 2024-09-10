@@ -2,8 +2,9 @@ import streamlit as st
 from Menu import menu
 import ollama
 from openai import OpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 import instructor
+from typing import Iterable, List
 
 
 def initialize():
@@ -64,6 +65,105 @@ def create_chat_record(role:str, prompt:str) -> dict:
     """
     
     return {"role":role, "content":prompt}
+
+
+def structured_llm_output(query:str):
+    """
+    Standardize LLM output in json format
+    """
+
+        # model_config = ConfigDict(
+        #     json_schema_extra = {
+        #         "examples": [
+        #             {"question": "I want to book 2024/10/24 10:00 - 14:00",
+        #              "answer": {"date": "2024/10/24", "period": "10:00 - 14:00"}},
+
+        #             {"question": "I want to book room",
+        #              "answer": {"date": "False", "period": "False"}},
+
+        #             {"question": "Can I reserve 2023/12/15 09:00 - 12:00?",
+        #              "answer": {"date": "2023/12/15", "period": "09:00 - 12:00"}},
+
+        #             {"question": "Book a meeting on 2024/10/24 at 10:00",
+        #              "answer": {"date": "2024/10/24", "period": "False"}},
+
+        #             {"question": "Please schedule me for 2024/10/24 10:00 - 14:00, or 2024/10/25?",
+        #              "answer": {"date": "False", "period": "False"}},
+
+        #             {"question": "I want to book 2024/10/24 10:00 - 14:00 and 2024/10/25 11:00 - 13:00.",
+        #              "answer": {"date": "False", "period": "False"}},
+
+        #             {"question": "Can you set up a booking for 2024/10/24 10:00 - 14:00, and also check for 2024/10/26?",
+        #              "answer": {"date": "False", "period": "False"}}
+        #         ]
+        #     }
+        # )
+
+    instruction = """
+    ### Instruction
+    You are a helpful assistant that classifies booking requests based on the provided date and time. Your task is to determine if the user has provided a valid booking date and time.
+
+    Before responding, please follow this chain of thoughts:
+    1. **Identify the Input**: First, check if the user input contains a date and time in the format `YYYY/MM/DD HH:MM - HH:MM` or `YYYY/MM/DD HH:MM to HH:MM`.
+    2. **Validate the Format**: If the input is present, verify that the date and time match the required format `YYYY/MM/DD HH:MM - HH:MM` or `YYYY/MM/DD HH:MM to HH:MM` (e.g., 2024/10/24 10:00 - 14:00).
+    3. **Check for Multiple Options**: If the user input contains more than one date and time request or option, respond with `{"date": None, "period": None}`.
+    4. **Respond Appropriately**: If the input is valid and contains a single booking request, respond in *JSON* with only `{"date": date, "period": period}`.
+
+    ### Important Instruction
+    **Please respond with only the *JSON* format result. Do not include any additional text, explanations, or comments.**
+
+    ### Examples:
+    1. User Input: "I want to book 2024/10/24 10:00 - 14:00"
+    Response: {"date": "2024/10/24", "period": "10:00 - 14:00"}
+
+    2. User Input: "I want to book room"
+    Response: {"date": None, "period": None}
+
+    3. User Input: "Can I reserve 2023/12/15 09:00 - 12:00?"
+    Response: {"date": "2023/12/15", "period": "09:00 - 12:00"}
+
+    4. User Input: "Book a meeting on 2024/10/24 at 10:00"
+    Response: {"date": "2024/10/24", "period": None}
+
+    5. User Input: "Please schedule me for 2024/10/24 10:00 - 14:00, or 2024/10/25?"
+    Response: {"date": None, "period": None}
+
+    6. User Input: "I want to book 2024/10/24 10:00 - 14:00 and 2024/10/25 11:00 - 13:00."
+    Response: {"date": None, "period": None}
+
+    7. User Input: "Can you set up a booking for 2024/10/24 10:00 - 14:00, and also check for 2024/10/26?"
+    Response: {"date": None, "period": None}
+
+    Now, classify the following user input:
+
+    User Input:
+    """
+
+    class Output(BaseModel):
+        date: str | None = Field(...,
+                          description="Get the date of booking from user input with format `YYYY-MM-DD` or `YYYY/MM/DD`")
+        period: str | None = Field(...,
+                            description="Get the period of the booking from user input with format `HH:SS-HH:SS` or `HH:SS - HH:SS` or `HH:SS to HH:SS`")
+        
+    client = instructor.from_openai(
+        OpenAI(
+            base_url = "http://localhost:11434/v1",
+            api_key = "ollama",
+        ),
+        mode = instructor.Mode.JSON,
+    )
+
+    resp = client.chat.completions.create(
+        model = st.session_state["model_name"],
+        messages = [
+            {"role": "system", "content": instruction},
+            {"role": "user", "content": query}
+        ],
+        response_model = Output,
+        max_retries = 2
+    )
+
+    return resp.model_dump_json(indent=4)
 
 
 def model_inference(chat_hist: list, stream_mode: bool = True):
@@ -159,8 +259,10 @@ def main():
         ### Append chat record into session state
         st.session_state["message_record"].append(create_chat_record("user", prompt))
 
-        llm_output = model_inference(st.session_state["message_record"],
-                                     st.session_state["stream_mode"])
+        # llm_output = model_inference(st.session_state["message_record"],
+        #                              st.session_state["stream_mode"])
+
+        llm_output = structured_llm_output(prompt)
         
         ### LLM regenerate
         with st.chat_message(st.session_state["model_name"], avatar="🦙"):
@@ -168,7 +270,10 @@ def main():
                 response = st.write_stream(llm_output)
             else:
                 response = llm_output
+                st.code(response)
                 st.markdown(response)
+
+        st.code(response)
 
         ### Append chat record into session state
         st.session_state["message_record"].append(create_chat_record("assistant", response))
